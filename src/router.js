@@ -5,6 +5,31 @@ const routes = [
 
     {
         path: '/',
+        name: 'TwibbonSignup',
+        component: () => import('@/components/TwibbonSignup.vue') 
+
+      },
+      
+      {
+        path: '/twibbon-signin',
+        name: 'TwibbonSignin',
+        component: () => import('@/components/TwibbonSignin.vue') 
+
+      },
+
+      {
+        path: '/reset-password',
+        name: 'ResetPassword',
+        component: () => import('@/components/ResetPassword.vue') 
+
+      },
+
+      
+
+
+
+       {
+        path: '/twibbon-page',
         name: 'TwibbonizePage',
         component: () => import('@/components/TwibbonizePage.vue') 
 

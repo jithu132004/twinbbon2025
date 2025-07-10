@@ -6,7 +6,7 @@ text
     <!-- Navbar -->
     <nav class="navbar">
       <div class="container flex justify-between items-center">
-        <h1 class="logo">twibbonize</h1>
+        <h1 class="logo">picpulse</h1>
         <router-link to="/" class="back-button">Back to Home</router-link>
       </div>
     </nav>
@@ -621,6 +621,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   align-items: center;
+  height: 400px;
 }
 
 .preview-title {

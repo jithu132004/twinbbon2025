@@ -1,9 +1,12 @@
 <template>
   <div class="main-container">
+    <!-- Background Canvas for Particle Animation -->
+    <canvas ref="particleCanvas" class="particle-canvas"></canvas>
+
     <!-- Navbar -->
     <nav class="navbar">
       <div class="container flex justify-between items-center">
-        <h1 class="logo">twibbonize</h1>
+        <h1 class="logo">picpulse</h1>
         <div class="nav-links">
           <div class="search-bar">
             <input type="text" placeholder="Search" class="search-input" />
@@ -35,7 +38,7 @@
             <div class="option-icon">
               <span>🖼️</span>
             </div>
-            <h3>Twibbon Frames</h3>
+            <h3>Frames</h3>
             <p>Design a custom frame to overlay on supporter photos.</p>
           </div>
         </div>
@@ -120,6 +123,7 @@ const router = useRouter();
 const selectedCampaign = ref(null);
 const userPhoto = ref(null);
 const canvas = ref(null);
+const particleCanvas = ref(null);
 const resultImage = ref(null);
 const errorMessage = ref('');
 const isLoading = ref(false);
@@ -154,11 +158,10 @@ const proceedWithSelection = () => {
   if (selectedOption.value === 'frame') {
     router.push('/twibbon-frames');
   } else if (selectedOption.value === 'campaign') {
-    router.push('/twibbon-bg'); // Navigate to the twibbon-bg page
+    router.push('/twibbon-bg');
   } else {
     console.log('Proceeding with campaign creation...');
     closeModal();
-    // Add campaign creation logic here
   }
 };
 
@@ -243,7 +246,98 @@ const downloadImage = () => {
   document.body.removeChild(link);
 };
 
+// Particle Animation Logic
+const initParticles = () => {
+  const canvas = particleCanvas.value;
+  const ctx = canvas.getContext('2d');
+  let particlesArray = [];
+  const numberOfParticles = 50;
+
+  // Set canvas size
+  const resizeCanvas = () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  };
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  // Particle class
+  class Particle {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = Math.random() * 5 + 1;
+      this.speedX = Math.random() * 1 - 0.5;
+      this.speedY = Math.random() * 1 - 0.5;
+    }
+
+    update() {
+      this.x += this.speedX;
+      this.y += this.speedY;
+
+      if (this.size > 0.2) this.size -= 0.01;
+
+      if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+      if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+    }
+
+    draw() {
+      ctx.fillStyle = 'rgba(255, 193, 7, 0.5)';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Initialize particles
+  const init = () => {
+    particlesArray = [];
+    for (let i = 0; i < numberOfParticles; i++) {
+      particlesArray.push(new Particle());
+    }
+  };
+  init();
+
+  // Connect particles with lines
+  const connectParticles = () => {
+    for (let a = 0; a < particlesArray.length; a++) {
+      for (let b = a; b < particlesArray.length; b++) {
+        const dx = particlesArray[a].x - particlesArray[b].x;
+        const dy = particlesArray[a].y - particlesArray[b].y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < 100) {
+          ctx.strokeStyle = `rgba(255, 193, 7, ${1 - distance / 100})`;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath();
+          ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
+          ctx.lineTo(particlesArray[b].x, particlesArray[b].y);
+          ctx.stroke();
+        }
+      }
+    }
+  };
+
+  // Animation loop
+  const animate = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < particlesArray.length; i++) {
+      particlesArray[i].update();
+      particlesArray[i].draw();
+      if (particlesArray[i].size <= 0.2) {
+        particlesArray.splice(i, 1);
+        i--;
+        particlesArray.push(new Particle());
+      }
+    }
+    connectParticles();
+    requestAnimationFrame(animate);
+  };
+  animate();
+};
+
 onMounted(() => {
+  // Initialize preview canvas
   if (canvas.value) {
     canvas.value.width = 500;
     canvas.value.height = 500;
@@ -256,10 +350,13 @@ onMounted(() => {
     ctx.textAlign = 'center';
     ctx.fillText('Preview will appear here', 250, 250);
   }
+
+  // Initialize particle animation
+  if (particleCanvas.value) {
+    initParticles();
+  }
 });
 </script>
-
-
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Satisfy&family=Inter:wght@400;500;600;700&display=swap');
@@ -283,17 +380,31 @@ body {
   background: var(--bg-dark);
   color: var(--text-white);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 .main-container {
   min-height: 100vh;
-  background: var(--bg-dark);
+  background: transparent;
+  position: relative;
+}
+
+.particle-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
 }
 
 .container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 1rem 2rem;
+  position: relative;
+  z-index: 1;
 }
 
 .flex {
@@ -313,6 +424,8 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
+  background: rgba(26, 26, 26, 0.9);
+  backdrop-filter: blur(5px);
 }
 
 .logo {
@@ -645,7 +758,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 2rem;
+  margin-top: 17rem;
   padding: 1rem 0;
 }
 
