@@ -30,7 +30,7 @@
               <span>📢</span>
               <span class="new-label">NEW!</span>
             </div>
-            <h3>Campaign</h3>
+            <h3>Background</h3>
             <p>Create a campaign with a unique background for your supporters.</p>
           </div>
           <!-- Twibbon Frames Option -->
