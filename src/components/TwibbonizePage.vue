@@ -1,13 +1,10 @@
 <template>
   <div class="main-container">
-    <!-- Background Canvas for Particle Animation -->
     <canvas ref="particleCanvas" class="particle-canvas"></canvas>
-
-    <!-- Navbar -->
     <nav class="navbar">
-      <div class="container flex justify-between items-center">
+      <div class="container navbar-flex">
         <h1 class="logo">picpulse</h1>
-        <div class="nav-links">
+        <div class="nav-links nav-links-navbar">
           <div class="search-bar">
             <input type="text" placeholder="Search" class="search-input" />
             <span class="search-icon">🔍</span>
@@ -16,15 +13,12 @@
         </div>
       </div>
     </nav>
-
-    <!-- Modal Popup -->
     <div v-if="showModal" class="modal-overlay">
       <div class="modal-content">
         <button @click="closeModal" class="close-button">✖</button>
         <h2 class="modal-title">Start Your Campaign</h2>
         <p class="modal-description">Create a campaign or design a custom frame to engage your audience.</p>
         <div class="modal-options">
-          <!-- Campaign Creation Option -->
           <div class="option-card" @click="createCampaign" role="button" tabindex="0" @keydown.enter="createCampaign" aria-label="Create Campaign">
             <div class="option-icon new-badge">
               <span>📢</span>
@@ -33,7 +27,6 @@
             <h3>Background</h3>
             <p>Create a campaign with a unique background for your supporters.</p>
           </div>
-          <!-- Twibbon Frames Option -->
           <div class="option-card" @click="createFrameTwibbon" role="button" tabindex="0" @keydown.enter="createFrameTwibbon" aria-label="Create Twibbon Frames">
             <div class="option-icon">
               <span>🖼️</span>
@@ -48,8 +41,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Main Content -->
     <div class="container content">
       <div class="hero-section">
         <div class="hero-text">
@@ -59,7 +50,25 @@
           </p>
           <button @click="openModal" class="start-campaign-btn">+ Start a Campaign</button>
         </div>
-        <div class="campaign-grid">
+        <div v-if="!selectedCampaign" class="carousel-section">
+          <div class="carousel-header-row">
+            <h2 class="carousel-title">Explore Frames & Backgrounds</h2>
+          </div>
+          <div class="carousel-container">
+            <div class="carousel-slides" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
+              <div v-for="(item, index) in carouselItems" :key="index"
+                   class="carousel-item"
+                   role="group"
+                   :aria-label="item.alt">
+                <div class="carousel-image-wrapper">
+                  <img :src="item.src" :alt="item.alt" class="carousel-image" />
+                </div>
+                <p class="carousel-caption">{{ item.caption }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="campaign-grid">
           <div v-for="campaign in campaigns" :key="campaign.id"
                class="campaign-card"
                @click="selectCampaign(campaign)"
@@ -77,8 +86,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Photo Upload and Preview -->
       <div v-if="selectedCampaign" class="upload-section">
         <h2 class="section-title">Join {{ selectedCampaign.name }}</h2>
         <div class="upload-preview">
@@ -104,8 +111,6 @@
           Back to Campaigns
         </button>
       </div>
-
-      <!-- Trending Section -->
       <div v-if="!selectedCampaign" class="trending-section">
         <h2 class="trending-title">Trending</h2>
         <a href="#" class="explore-more">Explore More ➔</a>
@@ -115,7 +120,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -131,6 +136,47 @@ const isLoading = ref(false);
 // Modal State
 const showModal = ref(false);
 const selectedOption = ref(null);
+
+// Carousel State
+const currentSlide = ref(0);
+const carouselItems = ref([
+  {
+    src: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80',
+    alt: 'Decorative Frame 1',
+    caption: 'Floral Frame'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80',
+    alt: 'Scenic Background 1',
+    caption: 'Nature Background'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=600&q=80',
+    alt: 'Decorative Frame 2',
+    caption: 'Modern Frame'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=600&q=80',
+    alt: 'Scenic Background 2',
+    caption: 'Urban Background'
+  },
+  // Landscape/3:2 ratio stock images for best fit
+  {
+    src: 'https://images.unsplash.com/photo-1465101178521-c1a9136a3b99?auto=format&fit=crop&w=600&q=80',
+    alt: 'Landscape 1',
+    caption: 'Wide Landscape'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=600&q=80',
+    alt: 'Landscape 2',
+    caption: 'City View'
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=600&q=80',
+    alt: 'Landscape 3',
+    caption: 'Forest Path'
+  },
+]);
 
 const openModal = () => {
   showModal.value = true;
@@ -246,6 +292,21 @@ const downloadImage = () => {
   document.body.removeChild(link);
 };
 
+// Auto-slide Carousel
+let autoSlideInterval = null;
+const startAutoSlide = () => {
+  autoSlideInterval = setInterval(() => {
+    currentSlide.value = (currentSlide.value + 1) % carouselItems.value.length;
+  }, 3000);
+};
+
+const stopAutoSlide = () => {
+  if (autoSlideInterval) {
+    clearInterval(autoSlideInterval);
+    autoSlideInterval = null;
+  }
+};
+
 // Particle Animation Logic
 const initParticles = () => {
   const canvas = particleCanvas.value;
@@ -253,7 +314,6 @@ const initParticles = () => {
   let particlesArray = [];
   const numberOfParticles = 50;
 
-  // Set canvas size
   const resizeCanvas = () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
@@ -261,7 +321,6 @@ const initParticles = () => {
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
 
-  // Particle class
   class Particle {
     constructor() {
       this.x = Math.random() * canvas.width;
@@ -289,7 +348,6 @@ const initParticles = () => {
     }
   }
 
-  // Initialize particles
   const init = () => {
     particlesArray = [];
     for (let i = 0; i < numberOfParticles; i++) {
@@ -298,7 +356,6 @@ const initParticles = () => {
   };
   init();
 
-  // Connect particles with lines
   const connectParticles = () => {
     for (let a = 0; a < particlesArray.length; a++) {
       for (let b = a; b < particlesArray.length; b++) {
@@ -318,7 +375,6 @@ const initParticles = () => {
     }
   };
 
-  // Animation loop
   const animate = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let i = 0; i < particlesArray.length; i++) {
@@ -337,7 +393,6 @@ const initParticles = () => {
 };
 
 onMounted(() => {
-  // Initialize preview canvas
   if (canvas.value) {
     canvas.value.width = 500;
     canvas.value.height = 500;
@@ -351,10 +406,15 @@ onMounted(() => {
     ctx.fillText('Preview will appear here', 250, 250);
   }
 
-  // Initialize particle animation
   if (particleCanvas.value) {
     initParticles();
   }
+
+  startAutoSlide();
+});
+
+onUnmounted(() => {
+  stopAutoSlide();
 });
 </script>
 
@@ -407,18 +467,6 @@ body {
   z-index: 1;
 }
 
-.flex {
-  display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.items-center {
-  align-items: center;
-}
-
 .navbar {
   padding: 1rem 0;
   position: sticky;
@@ -426,6 +474,11 @@ body {
   z-index: 50;
   background: rgba(26, 26, 26, 0.9);
   backdrop-filter: blur(5px);
+}
+.navbar-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .logo {
@@ -435,10 +488,23 @@ body {
   text-transform: lowercase;
 }
 
+
+
+.carousel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
 .nav-links {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+.nav-links-navbar {
+  margin-left: auto;
 }
 
 .search-bar {
@@ -606,9 +672,70 @@ body {
   font-size: 0.875rem;
   line-height: 1.5;
   display: -webkit-box;
-  line-clamp: 2;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.carousel-section {
+  flex: 1;
+}
+
+.carousel-title {
+  font-family: 'Inter', sans-serif;
+  color: var(--text-white);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  text-align: center;
+  margin-left: 150px;
+}
+
+.carousel-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.carousel-slides {
+  display: flex;
+  width: 100%;
+  transition: transform 0.5s ease-in-out;
+}
+
+.carousel-item {
+  flex: 0 0 100%;
+  text-align: center;
+  min-width: 100%;
+}
+
+.carousel-image-wrapper {
+  width: 100%;
+  aspect-ratio: 3/2;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #222;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-gray);
+  overflow: hidden;
+}
+.carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.carousel-caption {
+  font-family: 'Inter', sans-serif;
+  color: var(--text-white);
+  font-size: 1rem;
+  margin-top: 0.5rem;
 }
 
 .upload-section {
@@ -758,7 +885,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 17rem;
+  margin-top: 2.5rem;
   padding: 1rem 0;
 }
 
@@ -880,6 +1007,7 @@ body {
   outline: 2px solid var(--primary-yellow);
   outline-offset: 2px;
 }
+
 
 .option-icon {
   width: 60px;
