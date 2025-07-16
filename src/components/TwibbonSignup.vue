@@ -130,7 +130,7 @@ const handleSignup = async () => {
   errorMessage.value = '';
 
   try {
-    const response = await axios.post('http://192.168.1.20:8080/api/user/auth/register', {
+    const response = await axios.post('http://192.168.1.5:8080/api/user/auth/register', {
       name: name.value,
       email: email.value,
       password: password.value,

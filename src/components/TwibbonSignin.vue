@@ -175,7 +175,7 @@ const handleForgotPassword = async () => {
 
   try {
     const response = await axios.post(
-      `http://192.168.1.20:8080/api/user/auth/forgot-password?email=${encodeURIComponent(resetEmail.value)}`,
+      `http://192.168.1.5:8080/api/user/auth/forgot-password?email=${encodeURIComponent(resetEmail.value)}`,
       {}, // Empty body since email is sent as query parameter
       {
         headers: {
@@ -220,7 +220,7 @@ const handleLogin = async () => {
   errorMessage.value = '';
 
   try {
-    const response = await axios.post('http://192.168.1.20:8080/api/user/auth/login', {
+    const response = await axios.post('http://192.168.1.5:8080/api/user/auth/login', {
       email: email.value,
       password: password.value,
     });

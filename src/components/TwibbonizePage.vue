@@ -419,7 +419,8 @@ onUnmounted(() => {
 </script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Satisfy&family=Inter:wght@400;500;600;700&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Satisfy&family=Inter:wght@400;500;600;700&family=Tektur:wght@700&display=swap');
 
 * {
   margin: 0;
@@ -482,6 +483,7 @@ body {
 }
 
 .logo {
+  font-family: 'Tektur', cursive, sans-serif;
   font-size: 1.5rem;
   font-weight: 700;
   color: var(--text-white);
@@ -885,7 +887,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 2.5rem;
+  margin-top: 2.1rem;
   padding: 1rem 0;
 }
 

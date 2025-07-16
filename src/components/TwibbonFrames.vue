@@ -99,6 +99,7 @@
       <!-- Frame Gallery -->
       <section class="frame-gallery">
         <h2 class="section-title">Available Frames</h2>
+        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
         <div class="gallery-grid">
           <div
             v-for="frame in frames"
@@ -124,7 +125,9 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const frameName = ref('');
 const frameDescription = ref('');
 const frameImage = ref(null);
@@ -136,38 +139,62 @@ const frameErrorMessage = ref('');
 const errorMessage = ref('');
 const borderWidth = ref(80);
 
-const frames = ref([
-  {
-    id: 1,
-    name: 'Nature Frame',
-    description: 'A green leaf-themed frame.',
-    frameImage: 'https://via.placeholder.com/350x350.png?text=Nature+Frame'
-  },
-  {
-    id: 2,
-    name: 'Peace Frame',
-    description: 'A peaceful dove-themed frame.',
-    frameImage: 'https://via.placeholder.com/350x350.png?text=Peace+Frame'
-  },
-  {
-    id: 3,
-    name: 'Education Frame',
-    description: 'An academic-themed frame with books.',
-    frameImage: 'https://via.placeholder.com/350x350.png?text=Education+Frame'
-  },
-  {
-    id: 4,
-    name: 'Celebration Frame',
-    description: 'A festive frame with stars.',
-    frameImage: 'https://via.placeholder.com/350x350.png?text=Celebration+Frame'
-  },
-  {
-    id: 5,
-    name: 'Love Frame',
-    description: 'A romantic heart-themed frame.',
-    frameImage: 'https://via.placeholder.com/350x350.png?text=Love+Frame'
+// Initialize frames as an empty array to be populated by API
+const frames = ref([]);
+
+const fetchFrames = async () => {
+  // Retrieve token from sessionStorage
+  const token = sessionStorage.getItem('authToken');
+  
+  // Log token for debugging
+  console.log('Retrieved token:', token);
+  
+  // Check if token exists and is a non-empty string
+  if (!token || typeof token !== 'string' || token.trim() === '') {
+    errorMessage.value = 'Authentication required. Please log in.';
+    console.error('No valid token found in sessionStorage');
+    router.push('/signin');
+    return;
   }
-]);
+
+  try {
+    const response = await fetch('http://192.168.1.5:8080/api/user/frames?type=FOREGROUND', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token.trim()}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!response.ok) {
+      if (response.status === 401) {
+        errorMessage.value = 'Session expired or unauthorized. Please log in again.';
+        console.error('401 Unauthorized: Invalid or expired token');
+        sessionStorage.removeItem('authToken'); // Clear invalid token
+        router.push('/signin');
+        return;
+      } else if (response.status === 403) {
+        errorMessage.value = 'Access forbidden. You do not have permission to view frames.';
+        console.error('403 Forbidden: Check user permissions or token scope');
+        // Optionally redirect to sign-in
+        // router.push('/signin');
+        return;
+      }
+      throw new Error(`HTTP error ${response.status}: Failed to fetch frames`);
+    }
+    const data = await response.json();
+    console.log('API response:', data); // Log response for debugging
+    // Map API response to match the expected frame structure
+    frames.value = data.map((frame, index) => ({
+      id: frame.id || index + 1, // Fallback to index if id is not provided
+      name: frame.name || 'Unnamed Frame',
+      description: frame.description || 'No description provided',
+      frameImage: frame.frameImage || 'https://via.placeholder.com/350x350.png?text=Frame'
+    }));
+  } catch (error) {
+    console.error('Error fetching frames:', error);
+    errorMessage.value = 'Failed to load frames from the server. Please try again later.';
+  }
+};
 
 const createFrameFromImage = (image, borderWidthPx) => {
   const tempCanvas = document.createElement('canvas');
@@ -187,18 +214,17 @@ const createFrameFromImage = (image, borderWidthPx) => {
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const index = (y * size + x) * 4;
-      
-      // Check if pixel is in the center area that should be removed
       const distanceFromLeft = x;
       const distanceFromRight = size - x;
       const distanceFromTop = y;
       const distanceFromBottom = size - y;
       
-      // If pixel is not within border width from any edge, make it transparent
-      if (distanceFromLeft > borderWidthPx && 
-          distanceFromRight > borderWidthPx && 
-          distanceFromTop > borderWidthPx && 
-          distanceFromBottom > borderWidthPx) {
+      if (
+        distanceFromLeft > borderWidthPx &&
+        distanceFromRight > borderWidthPx &&
+        distanceFromTop > borderWidthPx &&
+        distanceFromBottom > borderWidthPx
+      ) {
         data[index + 3] = 0; // Set alpha to 0 (transparent)
       }
     }
@@ -263,7 +289,6 @@ const handleFrameImageUpload = (event) => {
   reader.onload = (e) => {
     frameImage.value = new Image();
     frameImage.value.onload = () => {
-      // Process the image to create frame effect
       const processed = createFrameFromImage(frameImage.value, borderWidth.value);
       processedFrameImage.value = processed;
       previewFrame();
@@ -390,6 +415,8 @@ const updateBorderWidth = () => {
 const unwatchBorderWidth = ref(null);
 onMounted(() => {
   clearCanvas();
+  // Fetch frames from the backend with token
+  fetchFrames();
   // Watch border width changes
   unwatchBorderWidth.value = setInterval(() => {
     if (frameImage.value && processedFrameImage.value) {
